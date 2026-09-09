@@ -133,12 +133,15 @@ $Script:Games = @(
     SteamDir='Cyberpunk 2077'; Exe='Cyberpunk2077.exe'; SubDir='bin\x64'
     Proxy='d3d12.dll'; Version=''; Extra=@()
     IniMode='stock'; KeepRe=$true; OverlayKo='Insert'
-    # dbghelp.dll 은 게임 본체 파일, version.dll 은 CET, winmm.dll 은 RED4ext,
+    # dbghelp.dll 은 게임 본체 파일, version.dll 은 CET, winmm.dll 은 RED4ext -
+    # 이 셋은 다른 DLSS 5 도구 잔재 검사(OtherProxyOk)에서도 정상으로 취급한다.
     # dxgi.dll 은 ReShade 가 이미 쓴다. OptiScaler 가 쓸 수 있는 이름 중
     # 남는 자리는 d3d12.dll 하나뿐이다.
+    OtherProxyOk=@('dbghelp.dll', 'version.dll', 'winmm.dll')
     # StreamlineSpoofing 을 끄지 않으면 GPU 가 두 장인 PC 에서 Streamline 이
-    # DLSS-G(프레임 생성) 와 DLSS-D(레이 리컨스트럭션) 를 스스로 꺼버린다.
-    IniSet=@{ Spoofing=@{ StreamlineSpoofing='false'; Dxgi='false' } }
+    # DLSS-G(프레임 생성) 와 DLSS-D(레이 리컨스트럭션) 를 스스로 꺼버린다 - 이건
+    # 개발 PC(듀얼 GPU) 사정이라 GPU 2장 감지될 때만 적용한다(F, Run-Install 참고).
+    DualGpuIniSet=@{ Spoofing=@{ StreamlineSpoofing='false'; Dxgi='false' } }
   },
   @{
     Id='wwm'; NameKo="연운십육성 (Where Winds Meet)"; NameEn='Where Winds Meet'
@@ -165,7 +168,8 @@ $Script:Games = @(
     # 의심할 것 - 아직 실제 화면에서 검증 전.
     # CrashHunter (넷이즈 자체 안티치트/SDK) 가 있는 게임이니 온라인 매칭 등은
     # 조심할 것 - 싱글/오프라인 콘텐츠 위주로만 검증됨.
-    IniSet=@{ Spoofing=@{ StreamlineSpoofing='false'; Dxgi='false' } }
+    # 이것도 사이버펑크와 마찬가지로 듀얼 GPU 사정 - GPU 2장일 때만 적용(F).
+    DualGpuIniSet=@{ Spoofing=@{ StreamlineSpoofing='false'; Dxgi='false' } }
   }
 )
 
@@ -233,7 +237,10 @@ $Script:S = @{
     writeOk       = '[O] 쓰기 테스트 통과'
     writeNg       = '[X] 게임 폴더에 쓸 수 없습니다: {0}'
     writeNgAdmin  = '    Program Files 아래입니다. 관리자 권한으로 이 설치기를 다시 실행해보세요.'
-    writeBakNg    = '[X] 백업 위치(바탕화면)에 쓸 수 없습니다: {0}'
+    writeBakNg    = '[X] 백업 위치에 쓸 수 없습니다: {0}'
+    cfaWarn       = "[!] Windows 보안의 [제어된 폴더 액세스]가 켜져 있습니다. 보호된 폴더에 대한 쓰기가 막힐 수 있습니다.`n    걸리면: Windows 보안 -> 바이러스 및 위협 방지 -> 랜섬웨어 방지 -> 제어된 폴더 액세스를 통해 앱 허용, 에서 이 설치기를 등록하세요.`n    (설치기가 보안 설정을 대신 바꾸지는 않습니다)"
+    sigOk         = '[O] nvngx_dlssnr.dll 서명 유효: {0}  (SHA-256 {1})'
+    sigWarn       = '[!] nvngx_dlssnr.dll 서명 없음/무효 ({0}) - 커뮤니티 수정본이면 정상입니다.  (SHA-256 {1})'
     verOk         = '[O] 게임 버전 {0}'
     verWarn       = '[!] 게임 버전 {0} - 검증된 버전은 {1} 입니다. 계속은 가능합니다.'
     verSkip       = '[-] 이 게임은 버전 검사를 하지 않습니다.'
@@ -250,6 +257,9 @@ $Script:S = @{
     conflict      = '[!] 충돌 파일 (설치 시 백업 후 제거): {0}'
     noConflict    = '[O] 충돌 파일 없음'
     keepRe        = '[-] ReShade 는 그대로 둡니다. 주입 이름이 다릅니다.'
+    otherToolHdr  = '[X] 다른 DLSS 5 도구(DLSS 5 Swapper 등)로 설치한 흔적이 발견됐습니다:'
+    otherToolItem = '    - {0}'
+    otherToolHelp = "    먼저 해당 도구에서 [복원]으로 되돌린 뒤 다시 시도하세요.`n    이미 지운 도구라면: 스팀 -> 게임 우클릭 -> 속성 -> 설치된 파일 -> 게임 파일 무결성 검사로 원본을 복구하세요.`n    단, 게임 폴더에 남은 _DLSS5_Backup 폴더는 무결성 검사로 안 지워지니 수동으로 삭제하세요."
 
     gameRun       = '[X] 게임이 실행 중입니다. 종료 후 다시 시도하세요.'
     bakHdr        = '--- 백업: {0}  (게임 폴더 밖) ---'
@@ -259,10 +269,12 @@ $Script:S = @{
     instHdr       = '--- 설치 ---'
     instItem      = '  {0}'
     instFail      = '  [X] {0} 복사 실패: {1}'
+    dualGpuApplied = '  [i] GPU 2장 감지 - StreamlineSpoofing/Dxgi 스푸핑 적용'
     vfyHdr        = '--- 검증 ---'
     vfyOk         = '  [O] {0}'
     vfyNg         = '  [X] {0} 해시 불일치'
     vfyMissing    = '  [X] {0} 파일이 없습니다'
+    vfyQuarantine = '  [!] {0} - 복사는 성공했는데 확인 시 파일이 없습니다. 백신이 격리했을 가능성이 높습니다. Windows 보안 -> 보호 기록에서 확인하세요.'
     bakPath       = '백업 위치: {0}'
     rmHdr         = '--- 제거 ---'
     rmItem        = '  삭제 {0}'
@@ -338,7 +350,10 @@ $Script:S = @{
     writeOk       = '[O] Write test passed'
     writeNg       = '[X] Cannot write to the game folder: {0}'
     writeNgAdmin  = '    This is under Program Files. Try re-running this installer as Administrator.'
-    writeBakNg    = '[X] Cannot write to the backup location (Desktop): {0}'
+    writeBakNg    = '[X] Cannot write to the backup location: {0}'
+    cfaWarn       = "[!] Windows Security's [Controlled Folder Access] is on - writes to protected folders may be blocked.`n    If it blocks you: Windows Security -> Virus & threat protection -> Ransomware protection -> Allow an app through Controlled Folder Access, and add this installer.`n    (This installer never changes that setting for you)"
+    sigOk         = '[O] nvngx_dlssnr.dll signature valid: {0}  (SHA-256 {1})'
+    sigWarn       = '[!] nvngx_dlssnr.dll is unsigned/invalid ({0}) - normal for a community-modified build.  (SHA-256 {1})'
     verOk         = '[O] Game version {0}'
     verWarn       = '[!] Game version {0} - verified on {1}. You may continue.'
     verSkip       = '[-] No version check for this game.'
@@ -355,6 +370,9 @@ $Script:S = @{
     conflict      = '[!] Conflicting files (backed up and removed on install): {0}'
     noConflict    = '[O] No conflicting files'
     keepRe        = '[-] ReShade is left in place; it uses a different proxy name.'
+    otherToolHdr  = '[X] Found traces of another DLSS 5 tool (e.g. DLSS 5 Swapper):'
+    otherToolItem = '    - {0}'
+    otherToolHelp = "    Restore with that tool first, then try again.`n    If you already removed that tool: Steam -> right-click the game -> Properties -> Installed Files -> Verify integrity of game files to restore the originals.`n    Verify won't remove a leftover _DLSS5_Backup folder in the game folder - delete that one by hand."
 
     gameRun       = '[X] The game is running. Close it and try again.'
     bakHdr        = '--- Backup: {0}  (outside the game folder) ---'
@@ -364,10 +382,12 @@ $Script:S = @{
     instHdr       = '--- Install ---'
     instItem      = '  {0}'
     instFail      = '  [X] {0} copy failed: {1}'
+    dualGpuApplied = '  [i] 2+ GPUs detected - applying StreamlineSpoofing/Dxgi override'
     vfyHdr        = '--- Verify ---'
     vfyOk         = '  [O] {0}'
     vfyNg         = '  [X] {0} hash mismatch'
     vfyMissing    = '  [X] {0} is missing'
+    vfyQuarantine = '  [!] {0} - copy reported success but the file is missing now. Your antivirus may have quarantined it - check Windows Security -> Protection history.'
     bakPath       = 'Backup location: {0}'
     rmHdr         = '--- Remove ---'
     rmItem        = '  removed {0}'
@@ -536,6 +556,45 @@ function Test-Writable($dir) {
   }
 }
 
+# P: 바탕화면은 OneDrive 로 리디렉션돼 있는 경우가 흔하다 (이 개발 PC 자체가 그렇다) -
+# 백업마다 수백 MB가 클라우드로 올라가고, 나중에 파일 온디맨드로 로컬 사본이 비워지면
+# 복원이 깨질 수 있다. LOCALAPPDATA 는 동기화 대상이 아니라 여기를 기본으로 쓴다.
+function Backup-Root {
+  $r = Join-Path $env:LOCALAPPDATA 'KiroshiOptics\backups'
+  if (-not (Test-Path $r)) { New-Item -ItemType Directory -Path $r -Force | Out-Null }
+  return $r
+}
+
+# 기존 사용자의 백업은 바탕화면에 있으므로, 새 위치와 옛 위치 둘 다 뒤져서
+# 가장 최근 것을 고른다.
+function Find-LatestBackup($p) {
+  $roots = @((Backup-Root), ([Environment]::GetFolderPath('Desktop')))
+  $all = @()
+  foreach ($r in $roots) {
+    if (Test-Path $r) {
+      $all += Get-ChildItem $r -Directory -Filter ('DLSS5-backup_' + $p.Id + '_*') -ErrorAction SilentlyContinue
+    }
+  }
+  return ($all | Sort-Object Name | Select-Object -Last 1)
+}
+
+# O: 제어된 폴더 액세스(랜섬웨어 방지)가 켜져 있으면 허용 목록에 없는 앱의 보호 폴더
+# 쓰기가 막힌다. 제3자 백신이면 Get-MpPreference 자체가 의미 없을 수 있으므로
+# 조회 실패는 "켜짐"이 아니라 "확인 불가"로 취급한다(경고하지 않음).
+function Test-CfaOn {
+  try {
+    $mp = Get-MpPreference -ErrorAction Stop
+    return ($mp.EnableControlledFolderAccess -eq 1)
+  } catch {
+    return $false
+  }
+}
+
+function Get-NvidiaGpuCount {
+  return @(Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -match 'NVIDIA' }).Count
+}
+
 # $force=$true ignores the checkbox and always merges in OptionalReshade - used by
 # Restore, so a stray ReShade install gets cleaned up even if the box is unchecked now.
 function Effective-Prof($p, [bool]$force = $false) {
@@ -661,8 +720,10 @@ function Run-Check {
     if ((-not $isAdmin) -and ($Script:Game -match '^[A-Za-z]:\\Program Files')) { Log 'writeNgAdmin' }
     $ok = $false
   }
-  $dwt = Test-Writable ([Environment]::GetFolderPath('Desktop'))
+  $dwt = Test-Writable (Backup-Root)
   if (-not $dwt.Ok) { Log 'writeBakNg' @($dwt.Msg); $ok = $false }
+
+  if (Test-CfaOn) { Log 'cfaWarn' }
 
   if ($p.Version) {
     $v = (Get-Item (Join-Path $Script:Game $p.Exe)).VersionInfo.FileVersion
@@ -700,6 +761,16 @@ function Run-Check {
   if ($ok) { Log 'payOk' }
   Log 'proxyUse' @($p.Proxy)
 
+  # D: nvngx_dlssnr.dll 서명 검증. 지금 배포 중인 310.8.SF 커뮤니티 수정본 자체가
+  # NotSigned 라, Valid 만 통과시키면 전원 차단된다 - 그래서 경고만 하고 막지 않는다.
+  $nrDll = Join-Path $Script:Payload 'nvngx_dlssnr.dll'
+  if (Test-Path $nrDll) {
+    $sig = Get-AuthenticodeSignature $nrDll
+    $hash = (Get-FileHash $nrDll -Algorithm SHA256).Hash
+    if ($sig.Status -eq 'Valid') { Log 'sigOk' @($sig.SignerCertificate.Subject, $hash) }
+    else { Log 'sigWarn' @($sig.Status, $hash) }
+  }
+
   $conf = @()
   if (-not $p.KeepRe) {
     $gx = Join-Path $Script:Game 'dxgi.dll'
@@ -712,6 +783,28 @@ function Run-Check {
   foreach ($a in (Get-ChildItem $Script:Game -Filter '*.addon64' -ErrorAction SilentlyContinue)) { $conf += $a.Name }
   if (Test-Path (Join-Path $Script:Game 'OptiScaler.asi')) { $conf += 'OptiScaler.asi' }
   if ($conf.Count) { Log 'conflict' @(($conf -join ', ')) } else { Log 'noConflict' }
+
+  # C: 다른 DLSS 5 도구(DLSS 5 Swapper 등)의 잔재. 겹쳐 설치하면 프록시 DLL 자리가
+  # 충돌해서 "설치는 성공했는데 화면이 이상함" 증상이 남는다 - 감지되면 설치를 막는다.
+  $otherTool = @()
+  foreach ($n in '_DLSS5_Backup', 'dlss5-feed.addon64', 'dlss5-feed.cfg', 'dgVoodoo.conf') {
+    if (Test-Path (Join-Path $Script:Game $n)) { $otherTool += $n }
+  }
+  foreach ($n in 'reshade-shaders\Shaders\DLSS5_Feed.fx', 'reshade-shaders\Shaders\MartysMods_LAUNCHPAD.fx') {
+    if (Test-Path (Join-Path $Script:Game $n)) { $otherTool += $n }
+  }
+  $proxyNames = 'dxgi.dll', 'd3d12.dll', 'd3d11.dll', 'version.dll', 'winmm.dll', 'dbghelp.dll'
+  $okProxy = @($p.Proxy) + @($p.OtherProxyOk)
+  if ($p.KeepRe) { $okProxy += 'dxgi.dll' }  # ReShade가 이미 여기 있는 게 이 게임에선 정상이고 위에서 별도로 다룬다
+  foreach ($n in $proxyNames) {
+    if (($okProxy -notcontains $n) -and (Test-Path (Join-Path $Script:Game $n))) { $otherTool += $n }
+  }
+  if ($otherTool.Count) {
+    Log 'otherToolHdr'
+    foreach ($n in $otherTool) { Log 'otherToolItem' @($n) }
+    Log 'otherToolHelp'
+    $ok = $false
+  }
 
   if ($ok) { Say 'state_checkOk' @() ([System.Drawing.Color]::SeaGreen) }
   else { Say 'state_checkNg' @() ([System.Drawing.Color]::Firebrick) }
@@ -738,7 +831,7 @@ function Run-Install {
   }
   if (-not (Run-Check)) { return }
 
-  $bk = Join-Path ([Environment]::GetFolderPath('Desktop')) ('DLSS5-backup_' + $p.Id + '_' + (Get-Date -Format 'yyyyMMdd_HHmmss'))
+  $bk = Join-Path (Backup-Root) ('DLSS5-backup_' + $p.Id + '_' + (Get-Date -Format 'yyyyMMdd_HHmmss'))
   New-Item -ItemType Directory -Path $bk -Force | Out-Null
   Log 'bakHdr' @($bk)
 
@@ -799,12 +892,29 @@ function Run-Install {
   $bad = $copyFails.Count
   foreach ($k in $files.Keys) {
     $tgt = Join-Path $Script:Game $k
-    if (-not (Test-Path $files[$k]) -or -not (Test-Path $tgt)) { Log 'vfyMissing' @($k); $bad++; continue }
+    if (-not (Test-Path $tgt)) {
+      # O: Copy-Step가 성공을 찍었는데 지금 보니 없다 - 백신 격리 가능성이 높다.
+      if ($copyFails -notcontains $k) { Log 'vfyQuarantine' @($k) } else { Log 'vfyMissing' @($k) }
+      $bad++; continue
+    }
+    if (-not (Test-Path $files[$k])) { Log 'vfyMissing' @($k); $bad++; continue }
     $h1 = (Get-FileHash $files[$k] -Algorithm SHA256).Hash
     $h2 = (Get-FileHash $tgt -Algorithm SHA256).Hash
     if ($h1 -eq $h2) { Log 'vfyOk' @($k) } else { Log 'vfyNg' @($k); $bad++ }
   }
-  foreach ($t in (Apply-IniSet (Join-Path $Script:Game 'OptiScaler.ini') $p.IniSet)) {
+
+  # F: 듀얼 GPU 전제값(StreamlineSpoofing 등)은 GPU 2장 감지될 때만 적용한다 -
+  # 단일 GPU에선 불필요하거나 오히려 손해일 수 있다.
+  $iniSet = @{}
+  if ($p.IniSet) { foreach ($sec in $p.IniSet.Keys) { $iniSet[$sec] = $p.IniSet[$sec].Clone() } }
+  if ($p.DualGpuIniSet -and (Get-NvidiaGpuCount) -ge 2) {
+    foreach ($sec in $p.DualGpuIniSet.Keys) {
+      if (-not $iniSet.ContainsKey($sec)) { $iniSet[$sec] = @{} }
+      foreach ($k in $p.DualGpuIniSet[$sec].Keys) { $iniSet[$sec][$k] = $p.DualGpuIniSet[$sec][$k] }
+    }
+    Log 'dualGpuApplied'
+  }
+  foreach ($t in (Apply-IniSet (Join-Path $Script:Game 'OptiScaler.ini') $iniSet)) {
     Log 'instItem' @('OptiScaler.ini  ' + $t)
   }
   if ($p.Method -ne 'reshade') {
@@ -833,9 +943,7 @@ function Run-Restore {
   if (Game-Running $p) { Log 'gameRun'; Say 'state_running' @() ([System.Drawing.Color]::Firebrick); return }
   if (-not $Script:Game) { Log 'noPath'; return }
 
-  $desk = [Environment]::GetFolderPath('Desktop')
-  $bk = Get-ChildItem $desk -Directory -Filter ('DLSS5-backup_' + $p.Id + '_*') -ErrorAction SilentlyContinue |
-        Sort-Object Name | Select-Object -Last 1
+  $bk = Find-LatestBackup $p
   if (-not $bk) { Log 'noBakFound'; Say 'state_noBak' @() ([System.Drawing.Color]::Firebrick); return }
 
   Log 'rmHdr'
