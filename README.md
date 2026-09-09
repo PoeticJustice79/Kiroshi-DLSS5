@@ -20,7 +20,7 @@ Auto-detect  ->  0. Get files  ->  1. Check  ->  2. Install
 | FINAL FANTASY VII REBIRTH | current | ReShade already installed is left in place |
 | The Witcher 3 | current (DX12 build) | ReShade already installed is left in place |
 | Grand Theft Auto V Enhanced | current | requires BattlEye off in the Rockstar launcher, single-player only |
-| Cyberpunk 2077 | 2.21 | see below - dual-GPU rigs need a spoofing fix, applied automatically |
+| Cyberpunk 2077 | 2.21 | needs a Streamline spoofing fix on dual-GPU rigs - auto-detected and applied only then |
 | Where Winds Meet | current | run folder is `Win64r` (not a typo); ReShade install is optional (checkbox) |
 
 Not supported: **Red Dead Redemption 2** (OptiScaler doesn't fit this game - handled separately
@@ -52,8 +52,10 @@ is the build documented as covering RTX 20 through 50.
 3. Pick the game from the dropdown, then press **[Auto-detect]**, **[0. Get files]**,
    **[1. Check]**, **[2. Install]**.
 
-`[0. Get files]` downloads OptiScaler (and, for Dragon's Dogma 2, its REFramework `dinput8.dll`)
-from their original release pages. It cannot fetch `nvngx_dlssnr.dll` — see above.
+`[0. Get files]` downloads OptiScaler from its original release pages — the common build used by
+most games, plus a second, newer build used only by Monster Hunter Wilds and Where Winds Meet
+(see their sections below) — and, for Dragon's Dogma 2, its REFramework `dinput8.dll`. It cannot
+fetch `nvngx_dlssnr.dll` — see above.
 
 ## Monster Hunter Wilds specifics
 
@@ -70,11 +72,11 @@ from their original release pages. It cannot fetch `nvngx_dlssnr.dll` — see ab
   not necessarily the same version the other games in this list use. Build compatibility is
   per-game; newer is not always better. `v0.1.2` crashes this specific game at boot
   (access violation inside the game's own code).
-- **ReShade can run alongside NR and Frame Generation**, but not by giving it its own proxy
-  name — OptiScaler has to load it internally. Rename ReShade's DLL to `ReShade64.dll`, put it
-  in the game folder next to OptiScaler, and set `LoadReshade=true` under `[Plugins]` in
-  `OptiScaler.ini`. This is optional and not automated by the installer, since it assumes you
-  already have your own ReShade preset you want to keep using.
+- **ReShade ships bundled with this profile and installs automatically alongside NR and Frame
+  Generation** — it can't take its own proxy name (`dxgi.dll` is already OptiScaler here), so
+  the installer places it as `ReShade64.dll` with a preset and sets `LoadReshade=true` under
+  `[Plugins]` in `OptiScaler.ini`, which makes OptiScaler load it internally. Nothing to
+  configure by hand for this game.
 
 ## Monster Hunter World (2018) specifics
 
@@ -112,9 +114,10 @@ from their original release pages. It cannot fetch `nvngx_dlssnr.dll` — see ab
 ## Uninstall
 
 Open the installer, pick the game, and press **[Restore]**. It removes what it installed and
-puts the backup back. Backups go to `Desktop\DLSS5-backup_<game>_<timestamp>`, deliberately
-**outside** the game folder — a copy left inside it gets picked up as a second instance of the
-same DLL.
+puts the backup back. Backups go to `%LOCALAPPDATA%\KiroshiOptics\backups\DLSS5-backup_<game>_<timestamp>`,
+deliberately **outside** the game folder — a copy left inside it gets picked up as a second
+instance of the same DLL. (Older backups made before this changed live on the Desktop instead;
+**[Restore]** checks both locations.)
 
 ## Notes
 
