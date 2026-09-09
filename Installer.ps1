@@ -878,9 +878,17 @@ function Run-Install {
   if ($p.Method -ne 'reshade') {
     $dstOd = Join-Path $Script:Game 'OptiScaler'
     # 백업 Move가 실패했다면 이미 위에서 걸렀지만, 방어적으로 한 번 더 -
-    # 대상 폴더가 남아있으면 Copy-Item -Recurse가 그 안에 중첩 복사해버린다.
-    if (Test-Path $dstOd) { Remove-Item $dstOd -Recurse -Force -ErrorAction SilentlyContinue }
-    if (-not (Copy-Step (Join-Path $od 'OptiScaler') $dstOd 'OptiScaler\' -Recurse)) { $copyFails += 'OptiScaler\' }
+    # 대상 폴더가 남아있으면 Copy-Item -Recurse가 그 안에 중첩 복사(game\OptiScaler\OptiScaler\...)를
+    # 만들어버리는데, 에러 없이 조용히 성공한 것처럼 끝나서 SilentlyContinue로 지우기만 실패해도
+    # 아무도 못 알아챈다(J) - 그래서 이 정리 자체를 실패로 취급해서 복사를 아예 안 하게 막는다.
+    $clearOk = $true
+    if (Test-Path $dstOd) {
+      try { Remove-Item $dstOd -Recurse -Force -ErrorAction Stop }
+      catch { Log 'instFail' @('OptiScaler\ (기존 폴더 정리)', $_.Exception.Message); $clearOk = $false }
+    }
+    if ($clearOk) {
+      if (-not (Copy-Step (Join-Path $od 'OptiScaler') $dstOd 'OptiScaler\' -Recurse)) { $copyFails += 'OptiScaler\' }
+    } else { $copyFails += 'OptiScaler\' }
   }
   foreach ($d in $p.ExtraDirs) {
     if (-not $d) { continue }
