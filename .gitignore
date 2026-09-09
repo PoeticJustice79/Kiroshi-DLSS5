@@ -1,2 +1,5 @@
 payload/
 *.log
+*.bak
+*.bak[0-9]
+범용가이드.txt
