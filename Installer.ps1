@@ -548,7 +548,7 @@ function Test-Writable($dir) {
   if (-not (Test-Path $dir)) { return @{ Ok = $false; Msg = 'not found' } }
   $probe = Join-Path $dir ('.kiroshi_write_test_' + [guid]::NewGuid().ToString('N') + '.tmp')
   try {
-    [IO.File]::WriteAllBytes($probe, [byte[]](1..1024))
+    [IO.File]::WriteAllBytes($probe, (New-Object byte[] 1024))
     Remove-Item $probe -Force -ErrorAction Stop
     return @{ Ok = $true }
   } catch {
@@ -934,9 +934,10 @@ function Run-Install {
   if ($p.GfxIni) {
     $gp = Join-Path $Script:Game $p.GfxIni.File
     if (Test-Path $gp) {
-      Copy-Item $gp (Join-Path $bk $p.GfxIni.File) -Force
-      Log 'bakItem' @($p.GfxIni.File)
-      foreach ($t in (Apply-IniSet $gp $p.GfxIni.Set)) { Log 'instItem' @(($p.GfxIni.File + '  ' + $t)) }
+      if (Copy-Step $gp (Join-Path $bk $p.GfxIni.File) $p.GfxIni.File) {
+        foreach ($t in (Apply-IniSet $gp $p.GfxIni.Set)) { Log 'instItem' @(($p.GfxIni.File + '  ' + $t)) }
+      }
+      else { $bad++ }
     }
     else { Log 'instItem' @(($p.GfxIni.File + ' not found yet - launch the game once, then press [2. Install] again')) }
   }
