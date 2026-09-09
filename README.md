@@ -1,8 +1,13 @@
 # Kiroshi Optics DLSS5 Installer
 
-> **Status:** v1.0.0 — first release under the Kiroshi Optics name. Verified on
-> the author's setup only. Use **[Restore]** if anything breaks, and please
-> report issues with logs attached.
+> **⚠ If you downloaded v1.0.0, update to v1.0.1.** v1.0.0's write-access
+> precheck crashed on every run (a `byte[]` range bug), so **[1. Check] failed
+> for all 8 games regardless of actual permissions** — the release was
+> effectively unusable. Grab the latest from the
+> [Releases page](https://github.com/PoeticJustice79/Kiroshi-DLSS5/releases).
+>
+> **Status:** v1.0.1. Verified on the author's setup only. Use **[Restore]**
+> if anything breaks, and please report issues with logs attached.
 
 One-click DLSS 5 Neural Rendering installer (OptiScaler + ReShade) for 8 verified games. Korean
 and English UI.
