@@ -1,7 +1,5 @@
 # Kiroshi Optics DLSS5 Installer
 
-게임에 뉴럴 렌더링을 이식합니다.
-
 One-click DLSS 5 Neural Rendering installer (OptiScaler + ReShade) for 8 verified games. Korean
 and English UI.
 
