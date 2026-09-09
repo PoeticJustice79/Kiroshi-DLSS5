@@ -16,7 +16,7 @@ Auto-detect  ->  0. Get files  ->  1. Check  ->  2. Install
 |---|---|---|
 | Monster Hunter Wilds | current | see below - REFramework required, `d3d12.dll` crashes at boot |
 | Monster Hunter World (2018) | current | different method entirely - ReShade + `renodx-dlss.addon64`, not OptiScaler; see below |
-| Dragon's Dogma 2 | 3.2.0.0 | see [DD2-DLSS5-Installer](https://github.com/PoeticJustice79/DD2-DLSS5-Installer) for a focused, DD2-only build of the same tool |
+| Dragon's Dogma 2 | 3.2.0.0 | uses a trimmed, project-specific `OptiScaler.ini` (414 bytes) - Check refuses to install if it's been overwritten by the stock one |
 | FINAL FANTASY VII REBIRTH | current | ReShade already installed is left in place |
 | The Witcher 3 | current (DX12 build) | ReShade already installed is left in place |
 | Grand Theft Auto V Enhanced | current | requires BattlEye off in the Rockstar launcher, single-player only |
